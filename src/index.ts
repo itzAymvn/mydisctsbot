@@ -1,13 +1,15 @@
 // Require the necessary modules
 import { Client, Collection, GatewayIntentBits } from "discord.js"
+import connectDB from "./database"
 import { config } from "dotenv"
 import path from "path"
 import fs from "fs"
+import { TTask } from "./types"
 
 // Load environment variables from a .env file
 config()
 
-// Functions to load all the events and commands
+// Functions to load all the events and commands and tasks
 const loadCommands = async () => {
 	// Get the path to the commands folder
 	const foldersPath = path.join(__dirname, "commands")
@@ -85,6 +87,35 @@ const loadEvents = async () => {
 		} event${totalEvents === 1 ? "" : "s"}.`
 	)
 }
+const loadTasks = async () => {
+	const tasksPath = path.join(__dirname, "tasks")
+	const taskFiles = fs
+		.readdirSync(tasksPath)
+		.filter((file) => file.endsWith(".ts") || file.endsWith(".js"))
+
+	for (const file of taskFiles) {
+		const filePath = path.join(tasksPath, file)
+		const task: TTask = require(filePath).default
+
+		if (task.interval === null) {
+			task.execute(client)
+		} else {
+			// Run once and then set the interval
+			task.execute(client)
+			setInterval(() => task.execute(client), task.interval)
+		}
+	}
+
+	console.log(
+		`[INFO] Loaded ${
+			taskFiles.length === 0
+				? "no"
+				: taskFiles.length === 1
+				? "one"
+				: taskFiles.length
+		} task${taskFiles.length === 1 ? "" : "s"}.`
+	)
+}
 
 // Create a new client instance
 const client = new Client({
@@ -106,13 +137,16 @@ const main = async () => {
 		throw new Error("Please provide a valid token in the .env file")
 	}
 
-	// Load all the commands and events
+	// Load all the commands and events and tasks
 	await loadEvents()
 	await loadCommands()
+	await loadTasks()
 
 	// Log in to Discord
 	await client.login(process.env.DISCORD_TOKEN)
 }
 
 // Call the main function to start the bot
-main()
+connectDB()
+	.then(() => main())
+	.catch(console.error)

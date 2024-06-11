@@ -13,8 +13,10 @@ import {
 	Interaction,
 	PermissionFlagsBits,
 	SlashCommandBuilder,
+	SlashCommandOptionsOnlyBuilder,
 	SlashCommandSubcommandBuilder,
 } from "discord.js"
+import { Document } from "mongoose"
 
 // Export the types for the Discord.js client to include commands
 declare module "discord.js" {
@@ -32,9 +34,37 @@ export type TEvent = {
 
 // Export the types for the Discord.js command
 export type TCommand = {
-	data: SlashCommandBuilder
+	data:
+		| SlashCommandBuilder
+		| SlashCommandSubcommandBuilder
+		| SlashCommandOptionsOnlyBuilder
 	devsOnly?: boolean
 	guildOnly?: boolean
 	userRequiredPermissions?: bigint[]
 	execute(interaction: CommandInteraction, client: Client): Promise<any>
+}
+
+type ParseDurationSuccess = {
+	success: true
+	duration: number
+}
+
+type ParseDurationFail = {
+	success: false
+	duration: 0
+}
+
+export type ParseDurationResult = ParseDurationSuccess | ParseDurationFail
+
+export interface IReminder extends Document {
+	userId: string
+	message: string
+	timestamp: number
+	sent: boolean
+}
+
+export type TTask = {
+	name: string
+	interval: number | null
+	execute(client: Client): Promise<void>
 }

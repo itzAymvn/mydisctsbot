@@ -8,6 +8,7 @@
 
 import { Client, EmbedBuilder, Events, Interaction } from "discord.js"
 import { TEvent } from "../types"
+import isDeveloper from "../utils/checkDeveloper"
 
 export default <TEvent>{
 	name: Events.InteractionCreate,
@@ -40,6 +41,22 @@ export default <TEvent>{
 				embeds: [embed],
 				ephemeral: true,
 			})
+		}
+
+		// Check if the command is devsOnly and the user is not a developer
+		if (command.devsOnly) {
+			if (!isDeveloper(interaction.user.id)) {
+				const embed = new EmbedBuilder()
+					.setColor("Red")
+					.setDescription(
+						"This command can only be executed by developers."
+					)
+
+				return await interaction.reply({
+					embeds: [embed],
+					ephemeral: true,
+				})
+			}
 		}
 
 		// Check if the command has userRequiredPermissions and the user is missing them

@@ -15,6 +15,7 @@ export default <TCommand>{
 		.setName("clearcache")
 		.setDescription("Clear the cache"),
 
+	devsOnly: true,
 	async execute(interaction) {
 		try {
 			await cache.clear()

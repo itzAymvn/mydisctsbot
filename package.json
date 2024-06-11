@@ -1,0 +1,33 @@
+{
+	"name": "mydisctsbot",
+	"version": "1.0.0",
+	"description": "A discord bot made with discord.js & typescript for the main purpose of learning",
+	"main": "build/index.js",
+	"scripts": {
+		"lint": "eslint .",
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node build/deploy-commands.js && node ."
+	},
+	"keywords": [
+		"discord",
+		"bot",
+		"typescript"
+	],
+	"author": "itzaymvn",
+	"license": "MIT",
+	"devDependencies": {
+		"@eslint/js": "^9.4.0",
+		"@types/node": "^20.14.2",
+		"eslint": "^9.4.0",
+		"globals": "^15.4.0",
+		"tsx": "^4.15.2",
+		"typescript": "^5.4.5",
+		"typescript-eslint": "^7.13.0"
+	},
+	"dependencies": {
+		"discord.js": "^14.15.3",
+		"dotenv": "^16.4.5",
+		"mongoose": "^8.4.1"
+	}
+}

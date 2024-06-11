@@ -1,0 +1,21 @@
+{
+	"compilerOptions": {
+		"target": "es6", // Specify ECMAScript target version
+		"module": "commonjs", // Specify module code generation
+		"outDir": "./build", // Directory to output compiled files
+		"rootDir": "./src", // Directory to compile files from
+		"lib": ["esnext"], // Specify library files to be included in the compilation
+		"strict": true, // Enable all strict type-checking options
+		"noUnusedLocals": true, // Report errors on unused locals
+		"noImplicitReturns": true, // Report error when not all code paths in function return a value
+		"noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statement
+		"noUncheckedIndexedAccess": true, // Include 'undefined' in index signature results
+		"esModuleInterop": true, // Emit __importDefault and __importStar for ESM interop
+		"skipLibCheck": true, // Skip type checking of declaration files
+		"forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file
+		"resolveJsonModule": true // Include modules imported with .json extension
+	},
+
+	"include": ["src/**/*"], // Files to include in compilation
+	"exclude": ["node_modules"] // Files to exclude from compilation
+}

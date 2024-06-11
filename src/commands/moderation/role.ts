@@ -170,9 +170,106 @@ export default <TCommand>{
 					ephemeral: true,
 				})
 			}
+		}
+
+		if (subcommand === "remove") {
+			const userOption = options.getUser("user")
+			const roleOption = options.getRole("role")
+
+			if (!userOption || !roleOption) {
+				return interaction.reply({
+					content: "Please provide a user and a role.",
+					ephemeral: true,
+				})
+			}
+
+			const user = interaction.guild!.members.cache.get(userOption.id)
+			const role = interaction.guild!.roles.cache.get(roleOption.id)
+
+			if (!user || !role) {
+				return interaction.reply({
+					content: "User or role not found.",
+					ephemeral: true,
+				})
+			}
+
+			// prevent the bot from removing roles from itself
+			if (user.id === client.user!.id) {
+				const errorEmbed = generateErrorEmbed(
+					`I can't remove roles from myself.`
+				)
+				return interaction.reply({
+					embeds: [errorEmbed],
+					ephemeral: true,
+				})
+			}
+
+			// if the user has higher role than the bot, return
+			if (
+				user.roles.highest.comparePositionTo(
+					botMember!.roles.highest
+				) >= 0
+			) {
+				const errorEmbed = generateErrorEmbed(
+					`The user ${user.user.tag} has a higher role than me.`
+				)
+				return interaction.reply({
+					embeds: [errorEmbed],
+					ephemeral: true,
+				})
+			}
+
+			// if the role is higher than the bot, return
+			if (role.comparePositionTo(botMember!.roles.highest) >= 0) {
+				const errorEmbed = generateErrorEmbed(
+					`I can't remove the role \`${role.name}\` because it is higher than me.`
+				)
+				return interaction.reply({
+					embeds: [errorEmbed],
+					ephemeral: true,
+				})
+			}
+
+			// if the role is higher than the role of whoever ran the command, return (this is to prevent users from removing roles higher than their own)
+			if (role.comparePositionTo(interactionMember!.roles.highest) >= 0) {
+				const errorEmbed = generateErrorEmbed(
+					`You can't remove the role \`${role.name}\` because it is higher than your highest role.`
+				)
+				return interaction.reply({
+					embeds: [errorEmbed],
+					ephemeral: true,
+				})
+			}
+
+			// if the user doesn't have the role, return
+			if (!user.roles.cache.has(role.id)) {
+				const errorEmbed = generateErrorEmbed(
+					`The user ${user.user.tag} doesn't have the role \`${role.name}\`.`
+				)
+				return interaction.reply({
+					embeds: [errorEmbed],
+					ephemeral: true,
+				})
+			}
+
+			try {
+				await user.roles.remove(role)
+				return interaction.reply({
+					content: `Role \`${role.name}\` removed from ${user.user.tag}.`,
+				})
+			} catch (error) {
+				console.error(error)
+				const errorEmbed = generateErrorEmbed(
+					`An error occurred while removing the role \`${role.name}\` from ${user.user.tag}.`
+				)
+				return interaction.reply({
+					embeds: [errorEmbed],
+					ephemeral: true,
+				})
+			}
 		} else
 			return interaction.reply({
-				content: "This command is not yet implemented.",
+				content: "Invalid subcommand.",
 				ephemeral: true,
 			})
 	},

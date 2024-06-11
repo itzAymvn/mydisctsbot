@@ -32,7 +32,7 @@ export default <TCommand>{
 			.setTimestamp()
 			.setFooter({
 				text: "Requested by " + interaction.user.tag,
-				iconURL: interaction.user.avatarURL(),
+				iconURL: interaction.user.avatarURL() || undefined,
 			})
 
 		// Create a new button
@@ -43,7 +43,7 @@ export default <TCommand>{
 			.setEmoji("🤖")
 
 		// Create a new action row
-		const component = new ActionRowBuilder().addComponents(button)
+		const component = new ActionRowBuilder().addComponents(button) as any
 
 		// Send the embed with the button
 		await interaction.reply({

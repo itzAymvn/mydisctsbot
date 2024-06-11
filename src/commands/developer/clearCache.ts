@@ -1,7 +1,7 @@
 /**
- * Reminder command
- * @module commands/utility/reminder
- * @description Set a reminder for a specific time
+ * Clear cache command
+ * @module commands/developer/clearCache
+ * @description Clear the cache
  * @license MIT
  * @version 1.0.0
  */

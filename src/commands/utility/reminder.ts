@@ -143,7 +143,6 @@ export default <TCommand>{
 
 			return await interaction.reply({
 				embeds: [embed],
-				ephemeral: true,
 			})
 		} catch (error: any) {
 			return interaction.reply({

@@ -6,6 +6,16 @@
  * @version 1.0.0
  */
 
+import {
+	Client,
+	Collection,
+	CommandInteraction,
+	Interaction,
+	PermissionFlagsBits,
+	SlashCommandBuilder,
+	SlashCommandSubcommandBuilder,
+} from "discord.js"
+
 // Export the types for the Discord.js client to include commands
 declare module "discord.js" {
 	export interface Client {
@@ -23,5 +33,8 @@ export type TEvent = {
 // Export the types for the Discord.js command
 export type TCommand = {
 	data: SlashCommandBuilder
-	execute(interaction: any): Promise<void>
+	devsOnly?: boolean
+	guildOnly?: boolean
+	userRequiredPermissions?: bigint[]
+	execute(interaction: CommandInteraction, client: Client): Promise<any>
 }

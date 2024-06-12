@@ -3,6 +3,10 @@
 	"version": "1.0.0",
 	"description": "A discord bot made with discord.js & typescript for the main purpose of learning",
 	"main": "build/index.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/itzAymvn/mydisctsbot"
+	},
 	"scripts": {
 		"lint": "eslint .",
 		"dev": "tsx watch src/index.ts",

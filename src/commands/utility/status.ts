@@ -6,9 +6,43 @@
  * @version 1.0.0
  */
 
-import { EmbedBuilder, SlashCommandBuilder } from "discord.js"
+import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
+	EmbedBuilder,
+	SlashCommandBuilder,
+} from "discord.js"
 import { TCommand } from "../../types"
 import { execSync } from "child_process"
+import packageJson from "../../../package.json"
+
+const getLatestCommit = (githubLink: string) => {
+	try {
+		const commitHash = execSync("git rev-parse HEAD").toString().trim()
+		const commitMessage = execSync("git log -1 --pretty=%B")
+			.toString()
+			.trim()
+		const commitAuthor = execSync("git log -1 --pretty=%an")
+			.toString()
+			.trim()
+		const commitDate = execSync("git log -1 --pretty=%cd").toString().trim()
+		const commitLink = `${githubLink}/commit/${commitHash}`
+
+		return {
+			success: true,
+			hash: commitHash,
+			message: commitMessage,
+			author: commitAuthor,
+			date: commitDate,
+			link: commitLink,
+		}
+	} catch (error) {
+		return {
+			success: false,
+		}
+	}
+}
 
 export default <TCommand>{
 	data: new SlashCommandBuilder()
@@ -49,9 +83,30 @@ export default <TCommand>{
 				iconURL: interaction.user.displayAvatarURL(),
 			})
 
+		const lastCommit = getLatestCommit(packageJson.repository.url)
+
+		const githubButton = new ButtonBuilder()
+			.setStyle(ButtonStyle.Link)
+			.setLabel("GitHub")
+			.setURL(packageJson.repository.url)
+
+		const latestCommit = new ButtonBuilder()
+			.setStyle(ButtonStyle.Link)
+			.setLabel("Latest Commit")
+			.setDisabled(!lastCommit.success)
+			.setURL(
+				lastCommit.success ? lastCommit.link! : "https://github.com"
+			)
+
+		const row = new ActionRowBuilder().addComponents(
+			githubButton,
+			latestCommit
+		) as any
+
 		// Reply with the embed
 		return await interaction.reply({
 			embeds: [embed],
+			components: [row],
 		})
 	},
 }

@@ -16,7 +16,9 @@ export default <TCommand>{
 		.setDescription("Replies with some information about the bot's status"),
 	async execute(interaction) {
 		// Get epoch time when the bot was started
-		const botUpSince = Math.floor(process.uptime() + Date.now() / 1000)
+		const botUpSince = Math.floor(
+			interaction.client.readyAt.getTime() / 1000
+		)
 		const memoryUsage =
 			(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2) + "MB"
 		const latency = interaction.client.ws.ping

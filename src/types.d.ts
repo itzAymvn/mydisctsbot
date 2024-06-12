@@ -37,6 +37,7 @@ export type TCommand = {
 	data:
 		| SlashCommandBuilder
 		| SlashCommandSubcommandBuilder
+		| SlashCommandSubcommandsOnlyBuilder
 		| SlashCommandOptionsOnlyBuilder
 	devsOnly?: boolean
 	guildOnly?: boolean

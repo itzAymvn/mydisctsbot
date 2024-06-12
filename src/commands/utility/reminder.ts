@@ -13,7 +13,6 @@ import {
 } from "discord.js"
 import { IReminder, TCommand } from "../../types"
 import Reminder from "../../database/models/Reminder"
-import cache from "../../utils/cacheManager"
 
 const parseString = (time: string): number => {
 	// Normalize input by converting to lowercase and trimming whitespace
@@ -157,11 +156,8 @@ export default <TCommand>{
 				}
 				const reminder = new Reminder(data)
 
-				// Save the reminder to the database & cache
+				// Save the reminder to the database
 				await reminder.save()
-				const reminders = (await cache.get("reminders")) || []
-				reminders.push(reminder)
-				await cache.set("reminders", reminders)
 
 				// Send a Embed message to the user including the reminder details and a warning to let user know that they need to have DMs enabled
 				const embed = new EmbedBuilder()
@@ -251,14 +247,6 @@ export default <TCommand>{
 				userId,
 				sent: sent || false,
 			})
-
-			const allReminders = (await cache.get("reminders")) || []
-			const newReminders = allReminders.filter(
-				(reminder: IReminder) =>
-					!(reminder.userId === userId && reminder.sent === sent)
-			)
-
-			await cache.set("reminders", newReminders)
 
 			return interaction.reply({
 				content: `Cleared ${reminders.length} reminders`,

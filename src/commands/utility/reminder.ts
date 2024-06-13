@@ -161,14 +161,6 @@ export default <TCommand>{
 				)
 		),
 	async execute(interaction) {
-		const channel = interaction.channel
-		if (!channel) {
-			return interaction.reply({
-				content: "This command can only be used in a server",
-				ephemeral: true,
-			})
-		}
-
 		const options = interaction.options as CommandInteractionOptionResolver
 		const subcommand = options.getSubcommand()
 

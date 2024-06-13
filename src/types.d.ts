@@ -7,6 +7,8 @@
  */
 
 import {
+	ButtonBuilder,
+	ButtonInteraction,
 	Client,
 	Collection,
 	CommandInteraction,
@@ -22,6 +24,7 @@ import { Document } from "mongoose"
 declare module "discord.js" {
 	export interface Client {
 		commands: Collection<string, TCommand>
+		buttons: Collection<string, TButton>
 	}
 }
 
@@ -30,6 +33,11 @@ export type TEvent = {
 	name: Events
 	once?: boolean
 	execute(client: Client, ...args: any[]): void
+}
+
+export type TButton = {
+	data: ButtonBuilder
+	execute(interaction: ButtonInteraction, client: Client): Promise<any>
 }
 
 // Export the types for the Discord.js command

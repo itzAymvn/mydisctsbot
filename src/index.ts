@@ -4,12 +4,12 @@ import connectDB from "./database"
 import { config } from "dotenv"
 import path from "path"
 import fs from "fs"
-import { TTask } from "./types"
+import { TButton, TTask } from "./types"
 
 // Load environment variables from a .env file
 config()
 
-// Functions to load all the events and commands and tasks
+// Functions to load all the events and commands and tasks and button
 const loadCommands = async () => {
 	// Get the path to the commands folder
 	const foldersPath = path.join(__dirname, "commands")
@@ -47,6 +47,36 @@ const loadCommands = async () => {
 				? "one"
 				: client.commands.size
 		} command${client.commands.size === 1 ? "" : "s"}.`
+	)
+}
+const loadButtons = async () => {
+	const buttonsPath = path.join(__dirname, "events/buttons")
+	const buttonFiles = fs
+		.readdirSync(buttonsPath)
+		.filter((file) => file.endsWith(".ts") || file.endsWith(".js"))
+
+	for (const file of buttonFiles) {
+		const filePath = path.join(buttonsPath, file)
+		const button: TButton = require(filePath).default
+
+		if (!button.data && !button.execute) {
+			return console.log(
+				`[WARNING] The button at ${filePath} is missing a required "data" and "execute" property.`
+			)
+		}
+
+		const btn = button.data.toJSON() as any
+		client.buttons.set(btn.custom_id, button)
+	}
+
+	console.log(
+		`[INFO] Loaded ${
+			client.buttons.size === 0
+				? "no"
+				: client.buttons.size === 1
+				? "one"
+				: client.buttons.size
+		} button${client.buttons.size === 1 ? "" : "s"}.`
 	)
 }
 const loadEvents = async () => {
@@ -127,8 +157,9 @@ const client = new Client({
 	],
 })
 
-// Initialize a new Collection to store the commands
+// Initialize a new Collection to store the commands and buttons
 client.commands = new Collection()
+client.buttons = new Collection()
 
 // Main function to log in to Discord and load all the commands and events
 const main = async () => {
@@ -139,6 +170,7 @@ const main = async () => {
 
 	// Load all the commands and events and tasks
 	await loadEvents()
+	await loadButtons()
 	await loadCommands()
 	await loadTasks()
 

@@ -6,7 +6,7 @@
  * @version 1.0.0
  */
 
-import { Colors, EmbedBuilder, SlashCommandBuilder } from "discord.js"
+import { SlashCommandBuilder } from "discord.js"
 import { TCommand } from "../../types"
 import { randomBytes } from "crypto"
 
@@ -62,19 +62,7 @@ export default <TCommand>{
 		for (const response of responses) {
 			total += response.probability
 			if (random <= total) {
-				const embed = new EmbedBuilder()
-					.setTitle("8ball")
-					.setDescription(response.response)
-					.setColor(Colors.Blurple)
-					.setFooter({
-						text: `Asked by ${interaction.user.tag}`,
-						iconURL: interaction.user.displayAvatarURL(),
-					})
-
-				return interaction.reply({
-					embeds: [embed],
-					ephemeral: true,
-				})
+				return interaction.reply(response.response)
 			}
 		}
 

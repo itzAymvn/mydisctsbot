@@ -7,6 +7,9 @@
  */
 
 import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonStyle,
 	CommandInteractionOptionResolver,
 	EmbedBuilder,
 	SlashCommandBuilder,
@@ -231,8 +234,21 @@ export default <TCommand>{
 						iconURL: interaction.user.displayAvatarURL(),
 					})
 
+				// Add Cancel Reminder button to the embed message
+				const cancelReminder = new ButtonBuilder()
+					.setCustomId(`cancelReminder-ID:${reminder._id}`)
+					.setLabel("Cancel Reminder")
+					.setStyle(ButtonStyle.Danger)
+					.setEmoji("🗑️")
+
+				// Create row
+				const row = new ActionRowBuilder().addComponents(
+					cancelReminder
+				) as any
+
 				return await interaction.reply({
 					embeds: [embed],
+					components: [row],
 				})
 			} catch (error: any) {
 				const errorEmbed = new EmbedBuilder()

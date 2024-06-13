@@ -1,6 +1,7 @@
 import { Client, Interaction, EmbedBuilder, Events } from "discord.js"
 import { TEvent } from "../types"
 import isDeveloper from "../utils/checkDeveloper"
+import Reminder from "../database/models/Reminder"
 
 export default <TEvent>{
 	name: Events.InteractionCreate,
@@ -86,6 +87,55 @@ export default <TEvent>{
 		}
 
 		if (interaction.isButton()) {
+			if (interaction.customId.startsWith("cancelReminder-ID:")) {
+				const reminderId = interaction.customId.split("ID:")[1]
+				const reminder = await Reminder.findOne({ _id: reminderId })
+
+				if (!reminder) {
+					return interaction.reply({
+						content: "This reminder doesn't exist.",
+						ephemeral: true,
+					})
+				}
+
+				if (reminder.userId !== interaction.user.id) {
+					return interaction.reply({
+						content: "You can only cancel your own reminders.",
+						ephemeral: true,
+					})
+				}
+
+				if (reminder.sent) {
+					return interaction.reply({
+						content:
+							"You can't cancel a reminder that has already been sent.",
+						ephemeral: true,
+					})
+				}
+
+				try {
+					await reminder.deleteOne()
+					return interaction.reply({
+						content: "Reminder has been cancelled.",
+						ephemeral: true,
+					})
+				} catch (error: any) {
+					const errorEmbed = new EmbedBuilder()
+						.setTitle("Error")
+						.setDescription(error.message)
+						.setColor("Red")
+						.setFooter({
+							text: "Reminder",
+							iconURL: interaction.user.displayAvatarURL(),
+						})
+
+					return interaction.reply({
+						embeds: [errorEmbed],
+						ephemeral: true,
+					})
+				}
+			}
+
 			const button = interaction.client.buttons.get(interaction.customId)
 
 			if (!button) {

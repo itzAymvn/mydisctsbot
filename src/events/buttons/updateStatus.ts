@@ -1,16 +1,15 @@
-import { ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js"
+import { EmbedBuilder } from "discord.js"
 import { TButton } from "../../types"
 import { execSync } from "child_process"
 
 export default <TButton>{
-	data: new ButtonBuilder()
-		.setCustomId("updateStatus")
-		.setLabel("Update Status")
-		.setStyle(ButtonStyle.Secondary)
-		.setEmoji("🔄"),
+	name: "updateStatus",
+
+	validate: (interaction) => {
+		return interaction.customId === "updateStatus"
+	},
 
 	async execute(interaction, client) {
-		// Get epoch time when the bot was started
 		const botUpSince = Math.floor(
 			interaction.client.readyAt.getTime() / 1000
 		)

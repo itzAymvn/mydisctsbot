@@ -59,14 +59,13 @@ const loadButtons = async () => {
 		const filePath = path.join(buttonsPath, file)
 		const button: TButton = require(filePath).default
 
-		if (!button.data && !button.execute) {
+		if (!button.validate && !button.execute) {
 			return console.log(
 				`[WARNING] The button at ${filePath} is missing a required "data" and "execute" property.`
 			)
 		}
 
-		const btn = button.data.toJSON() as any
-		client.buttons.set(btn.custom_id, button)
+		client.buttons.set(button.name, button)
 	}
 
 	console.log(

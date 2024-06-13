@@ -13,7 +13,6 @@ import {
 	EmbedBuilder,
 	SlashCommandBuilder,
 } from "discord.js"
-import updateStatus from "../../events/buttons/updateStatus"
 import { TCommand } from "../../types"
 import { execSync } from "child_process"
 import packageJson from "../../../package.json"
@@ -99,7 +98,11 @@ export default <TCommand>{
 				lastCommit.success ? lastCommit.link! : "https://github.com"
 			)
 
-		const updateStatusButton = updateStatus.data
+		const updateStatusButton = new ButtonBuilder()
+			.setStyle(ButtonStyle.Primary)
+			.setLabel("Update Status")
+			.setCustomId("updateStatus")
+			.setEmoji("🔄")
 
 		const row = new ActionRowBuilder().addComponents(
 			githubButton,

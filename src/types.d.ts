@@ -36,7 +36,8 @@ export type TEvent = {
 }
 
 export type TButton = {
-	data: ButtonBuilder
+	name: string
+	validate: (interaction: ButtonInteraction) => boolean
 	execute(interaction: ButtonInteraction, client: Client): Promise<any>
 }
 

@@ -10,12 +10,7 @@ export default <TEvent>{
 				interaction.commandName
 			)
 
-			if (!command) {
-				console.error(
-					`No command matching ${interaction.commandName} was found.`
-				)
-				return
-			}
+			if (!command) return
 
 			if (command.guildOnly && !interaction.guild) {
 				const embed = new EmbedBuilder()
@@ -90,11 +85,7 @@ export default <TEvent>{
 				b.validate(interaction)
 			)
 
-			if (!button) {
-				return console.error(
-					`No button matching ${interaction.customId} was found.`
-				)
-			}
+			if (!button) return
 
 			try {
 				return await button.execute(interaction, client)

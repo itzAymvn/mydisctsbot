@@ -19,72 +19,78 @@ import { TCommand } from "../../types"
 import moment from "moment-timezone"
 import Reminder from "../../database/models/Reminder"
 
-const parseString = (time: string): number => {
-	time = time.toLowerCase().trim()
+// const parseString = (time: string): number => {
+// 	time = time.toLowerCase().trim()
 
-	const timeRegex =
-		/(\d+)\s*(d|day|days|h|hr|hrs|hour|hours|m|min|mins|minute|minutes|s|sec|secs|second|seconds)/g
-	const matches = [...time.matchAll(timeRegex)]
+// 	const timeRegex =
+// 		/(\d+)\s*(d|day|days|h|hr|hrs|hour|hours|m|min|mins|minute|minutes|s|sec|secs|second|seconds)/g
+// 	const matches = [...time.matchAll(timeRegex)]
 
-	if (matches.length === 0) {
-		throw new Error("Invalid time format. Use ?d ?h ?m ?s")
-	}
+// 	if (matches.length === 0) {
+// 		throw new Error("Invalid time format. Use ?d ?h ?m ?s")
+// 	}
 
-	let duration = 0
-	for (const match of matches) {
-		const [_, value, unit] = match
-		if (!value || !unit) {
-			throw new Error("Invalid time format")
-		}
-		const numValue = parseInt(value)
-		switch (unit) {
-			case "d":
-			case "day":
-			case "days":
-				duration += numValue * 86400 // 1 day = 86400 seconds
-				break
-			case "h":
-			case "hr":
-			case "hrs":
-			case "hour":
-			case "hours":
-				duration += numValue * 3600 // 1 hour = 3600 seconds
-				break
-			case "m":
-			case "min":
-			case "mins":
-			case "minute":
-			case "minutes":
-				duration += numValue * 60 // 1 minute = 60 seconds
-				break
-			case "s":
-			case "sec":
-			case "secs":
-			case "second":
-			case "seconds":
-				duration += numValue // 1 second = 1 second
-				break
-			default:
-				throw new Error("Invalid time unit")
-		}
-	}
+// 	let duration = 0
+// 	for (const match of matches) {
+// 		const [_, value, unit] = match
+// 		if (!value || !unit) {
+// 			throw new Error("Invalid time format")
+// 		}
+// 		const numValue = parseInt(value)
+// 		switch (unit) {
+// 			case "d":
+// 			case "day":
+// 			case "days":
+// 				duration += numValue * 86400 // 1 day = 86400 seconds
+// 				break
+// 			case "h":
+// 			case "hr":
+// 			case "hrs":
+// 			case "hour":
+// 			case "hours":
+// 				duration += numValue * 3600 // 1 hour = 3600 seconds
+// 				break
+// 			case "m":
+// 			case "min":
+// 			case "mins":
+// 			case "minute":
+// 			case "minutes":
+// 				duration += numValue * 60 // 1 minute = 60 seconds
+// 				break
+// 			case "s":
+// 			case "sec":
+// 			case "secs":
+// 			case "second":
+// 			case "seconds":
+// 				duration += numValue // 1 second = 1 second
+// 				break
+// 			default:
+// 				throw new Error("Invalid time unit")
+// 		}
+// 	}
 
-	return duration // in seconds
-}
+// 	return duration // in seconds
+// }
 
-const parseDate = (dateString: string): number => {
-	const date = moment.tz(dateString, "MM/DD/YYYY HH:mm:ss", moment.tz.guess())
+const parseDate = (dateString: string, timezone: string): number => {
+	const date = moment.tz(dateString, "MM/DD/YYYY HH:mm:ss", timezone)
 
 	if (!date.isValid()) {
 		throw new Error("Invalid date format. Use MM/DD/YYYY HH:MM:SS")
 	}
 
 	if (date.isBefore(Date.now())) {
-		throw new Error(`${date.format("lll")} is in the past`)
+		throw new Error(
+			`\`${date.format(
+				"MM/DD/YYYY HH:mm:ss"
+			)}\` is in the past for the timezone \`${timezone}\``
+		)
 	}
 
 	return date.valueOf()
 }
+
+const timezones = moment.tz.names()
 
 export default <TCommand>{
 	data: new SlashCommandBuilder()
@@ -96,38 +102,20 @@ export default <TCommand>{
 				.setDescription("Set a reminder")
 				.addStringOption((option) =>
 					option
-						.setName("type")
+						.setName("date")
 						.setDescription(
-							"The type date you want to set the reminder for"
+							"The date and time of the reminder (MM/DD/YYYY HH:MM:SS)"
 						)
 						.setRequired(true)
-						.addChoices([
-							// e.g. 1h 30s
-							{
-								name: "Duration",
-								value: "duration",
-							},
-
-							// e.g. 06/12/2024 18:00:00
-							{
-								name: "Date",
-								value: "date",
-							},
-
-							// e.g. 1672531200
-							{
-								name: "Epoch Timestamp",
-								value: "epoch",
-							},
-						])
 				)
 				.addStringOption((option) =>
 					option
-						.setName("time")
+						.setName("timezone")
 						.setDescription(
-							'Duration: "?d ?h ?m ?s | Date (in UTC): "MM/DD/YYYY HH:MM:SS" | Epoch Timestamp: "1672531200"'
+							"The timezone of the reminder. Default is UTC"
 						)
-						.setRequired(true)
+						.setRequired(false)
+						.setAutocomplete(true)
 				)
 				.addStringOption((option) =>
 					option
@@ -135,6 +123,8 @@ export default <TCommand>{
 						.setDescription(
 							"The message to send when the reminder is up"
 						)
+						.setMaxLength(100)
+						.setMinLength(3)
 						.setRequired(false)
 				)
 		)
@@ -154,47 +144,48 @@ export default <TCommand>{
 						.setRequired(false)
 				)
 		),
+	async autocomplete(interaction, client) {
+		const focusedOption = interaction.options.getFocused(true)
+		if (focusedOption.name === "timezone") {
+			const timezone = focusedOption.value?.toLowerCase()
+			const filteredTimezones = timezones.filter((tz) =>
+				tz.toLowerCase().includes(timezone)
+			)
+
+			if (!filteredTimezones.length) {
+				return interaction.respond(
+					timezones.slice(0, 25).map((tz) => ({
+						name: tz,
+						value: tz,
+					}))
+				)
+			}
+
+			const options = filteredTimezones.slice(0, 25).map((tz) => ({
+				name: tz,
+				value: tz,
+			}))
+			return interaction.respond(options)
+		}
+	},
 	async execute(interaction) {
 		const options = interaction.options as CommandInteractionOptionResolver
 		const subcommand = options.getSubcommand()
 
 		if (subcommand === "set") {
-			const type = options.getString("type")
-			const time = options.getString("time")
+			const date = options.getString("date")
+			const timezone = options.getString("timezone")
 			const message = options.getString("message") || "Reminder"
 
-			if (!time) {
+			if (!date) {
 				return interaction.reply({
-					content: "Please provide a time for the reminder",
+					content: "Please provide a date for the reminder",
 					ephemeral: true,
 				})
 			}
 
 			try {
-				let timestamp: number = 0
-				if (type === "duration") {
-					const duration = parseString(time)
-					timestamp = Date.now() + duration * 1000
-				} else if (type === "date") {
-					timestamp = parseDate(time)
-				} else if (type === "epoch") {
-					const epoch = parseInt(time)
-					const date = new Date(epoch * 1000)
-					if (isNaN(date.getTime())) {
-						throw new Error("Invalid epoch timestamp")
-					}
-
-					if (date.getTime() < Date.now()) {
-						throw new Error("Date must be in the future")
-					}
-
-					timestamp = epoch * 1000
-				} else {
-					return interaction.reply({
-						content: "Invalid type",
-						ephemeral: true,
-					})
-				}
+				const timestamp = parseDate(date, timezone || "UTC")
 
 				const data = {
 					userId: interaction.user.id,
@@ -212,6 +203,7 @@ export default <TCommand>{
 					.setTitle("Reminder Set")
 					.setDescription(
 						`\`•\` **Message:** ${message}\n` +
+							`\`•\` **Timezone:** ${timezone || "UTC"}\n` +
 							`\`•\` **Time:** <t:${Math.floor(
 								timestamp / 1000
 							)}:R>\n` +

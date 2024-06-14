@@ -1,6 +1,11 @@
 import { TTask } from "../types"
 import Reminder from "../database/models/Reminder"
 
+const remindersWithTimeout: {
+	_id: unknown
+	timeout: NodeJS.Timeout
+}[] = []
+
 const reminderTracker: TTask = {
 	name: "reminderTracker",
 	interval: 10000, // 10 seconds in milliseconds
@@ -15,18 +20,33 @@ const reminderTracker: TTask = {
 			if (sent) continue
 			const timeLeft = timestamp - now
 
+			// Skip reminders that already have a timeout set
+			if (remindersWithTimeout.some((r) => r._id === reminder._id))
+				continue
+
 			if (timeLeft <= 0) {
 				const user = await client.users.fetch(userId)
 				await user.send(`⏰ **Reminder:** ${message}`).catch(() => {})
 				remindersSent.push(reminder._id)
 			} else if (timeLeft <= 10000) {
-				setTimeout(async () => {
+				const timeout = setTimeout(async () => {
 					const user = await client.users.fetch(userId)
 					await user
 						.send(`⏰ **Reminder:** ${message}`)
 						.catch(() => {})
 					remindersSent.push(reminder._id)
+
+					// Remove the reminder from remindersWithTimeout once sent
+					const index = remindersWithTimeout.findIndex(
+						(r: any) => r._id === reminder._id
+					)
+					if (index !== -1) {
+						remindersWithTimeout.splice(index, 1)
+					}
 				}, timeLeft)
+
+				// Add the reminder to the remindersWithTimeout array
+				remindersWithTimeout.push({ _id: reminder._id, timeout })
 			}
 		}
 

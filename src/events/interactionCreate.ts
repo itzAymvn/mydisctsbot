@@ -120,7 +120,7 @@ export default <TEvent>{
 			}
 
 			try {
-				return await command.autocomplete!(interaction)
+				return await command.autocomplete!(interaction, client)
 			} catch (error) {
 				console.error(error)
 			}

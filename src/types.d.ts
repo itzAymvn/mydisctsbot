@@ -51,7 +51,10 @@ export type TCommand = {
 	devsOnly?: boolean
 	guildOnly?: boolean
 	userRequiredPermissions?: bigint[]
-	autocomplete?(interaction: CommandInteractionOptionResolver): Promise<void>
+	autocomplete?(
+		interaction: CommandInteractionOptionResolver,
+		client: Client
+	): Promise<void>
 	execute(interaction: CommandInteraction, client: Client): Promise<any>
 }
 

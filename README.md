@@ -69,6 +69,17 @@ If you have already run the BUILD command, all you have to do is start your bot.
 
 ## Commands
 
+### Developer Commands
+-  **clearcache:** Clear the cache of a command.
+    ```sh
+    /clearcache
+    ```
+-  **leave-server:** Leave a server.
+    ```sh
+    /leave-server [server]
+    • server: The server ID
+    ```
+
 ### Fun Commands
 
 -   **8ball:** Answers a question with a random response.
@@ -96,12 +107,18 @@ If you have already run the BUILD command, all you have to do is start your bot.
     ```sh
     /ping
     ```
--   **Reminder:** Set reminders.
+-   **Reminder:** Set, list, or clear reminders.
+
     ```sh
-    /reminder [type] [time] [message]
+    /reminder set [type] [time] [message]
     • type: Duration, Date, Epoch Timestamp
     • time: Duration: 1d1h1m1s | Date (UTC): MM/DD/YYYY HH:MM:SS | Epoch Timestamp: 1672531200
+
+    /reminder list
+    /reminder clear [sent]
+    • sent: Clear sent reminders only
     ```
+
 -   **Status:** Get some information about the bot's status
     ```sh
     /status

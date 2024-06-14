@@ -10,11 +10,12 @@ import {
 	ActionRowBuilder,
 	ButtonBuilder,
 	ButtonStyle,
+	Colors,
 	CommandInteractionOptionResolver,
 	EmbedBuilder,
 	SlashCommandBuilder,
 } from "discord.js"
-import { IReminder, TCommand } from "../../types"
+import { TCommand } from "../../types"
 import moment from "moment-timezone"
 import Reminder from "../../database/models/Reminder"
 
@@ -138,17 +139,7 @@ export default <TCommand>{
 				)
 		)
 		.addSubcommand((subcommand) =>
-			subcommand
-				.setName("list")
-				.setDescription("List all your reminders")
-				.addBooleanOption((option) =>
-					option
-						.setName("sent")
-						.setDescription(
-							"Only show reminder that have been sent already"
-						)
-						.setRequired(false)
-				)
+			subcommand.setName("list").setDescription("List all your reminders")
 		)
 		.addSubcommand((subcommand) =>
 			subcommand
@@ -265,52 +256,158 @@ export default <TCommand>{
 					ephemeral: true,
 				})
 			}
-		}
-
-		if (subcommand === "list") {
-			const sent = options.getBoolean("sent")
+		} else if (subcommand === "list") {
 			const userId = interaction.user.id
 
-			const reminders = await Reminder.find({
+			// Page size and current page initialization
+			let currentPage = 1
+			const pageSize = 5
+
+			// Count total reminders to determine total pages
+			const totalRemindersCount = await Reminder.countDocuments({
 				userId,
-				sent: sent || false,
 			})
 
-			if (reminders.length === 0) {
-				return interaction.reply({
-					content:
-						"You have no reminders. Set one using `/reminder set`",
-					ephemeral: true,
-				})
-			}
+			// Calculate total pages
+			const totalPages = Math.ceil(totalRemindersCount / pageSize)
 
-			const embed = new EmbedBuilder()
-				.setTitle("Your Reminders")
-				.setColor("Blue")
-				.setTimestamp()
-				.setDescription(
-					reminders
-						.map(
-							(reminder: IReminder, index: number) =>
-								`**${index + 1}.** ${
+			// Function to generate embed for the current page
+			const generateEmbed = async (page: number) => {
+				// Fetch reminders for the current page
+				const reminders = await Reminder.find({
+					userId,
+				})
+					.sort({ timestamp: -1 })
+					.skip((page - 1) * pageSize)
+					.limit(pageSize)
+
+				// If no reminders are found
+				if (reminders.length === 0) {
+					return {
+						success: false,
+						error: "There are no reminders to display",
+					}
+				}
+
+				// Create the embed message
+				const embed = new EmbedBuilder()
+					.setTitle("Reminders")
+					.setColor(Colors.Blue)
+					.setDescription(
+						reminders
+							.map((reminder, index) => {
+								return `${reminder.sent ? "✔" : "✖"} | ${
 									reminder.message
 								} - <t:${Math.floor(
 									reminder.timestamp / 1000
 								)}:R>`
-						)
-						.join("\n")
-				)
-				.setFooter({
-					text: "Reminder",
-					iconURL: interaction.user.displayAvatarURL(),
+							})
+							.join("\n")
+					)
+					.setFooter({
+						text: `Page ${page}/${totalPages.toLocaleString()} | Total Reminders: ${totalRemindersCount.toLocaleString()}`,
+						iconURL: interaction.user.displayAvatarURL(),
+					})
+
+				return {
+					success: true,
+					embed: embed,
+				}
+			}
+
+			// Send the initial embed
+			const initialEmbed = await generateEmbed(currentPage)
+			if (!initialEmbed.success) {
+				return interaction.reply({
+					content: initialEmbed.error,
+					ephemeral: true,
 				})
+			}
 
-			return await interaction.reply({
-				embeds: [embed],
+			// Add Buttons to the initial embed
+			const previousButton = new ButtonBuilder()
+				.setCustomId(`previousReminderPage`)
+				.setLabel("Previous")
+				.setStyle(ButtonStyle.Primary)
+				.setDisabled(currentPage === 1)
+				.setEmoji("⬅️")
+
+			const nextButton = new ButtonBuilder()
+				.setCustomId(`nextReminderPage`)
+				.setLabel("Next")
+				.setStyle(ButtonStyle.Primary)
+				.setDisabled(currentPage === totalPages)
+				.setEmoji("➡️")
+
+			const row = new ActionRowBuilder().addComponents(
+				previousButton,
+				nextButton
+			) as any
+
+			// Send the initial embed
+			const initMessage = await interaction.reply({
+				embeds: [initialEmbed.embed!],
+				components: [row],
 			})
-		}
 
-		if (subcommand === "clear") {
+			// Create a collector
+			const collector = initMessage.createMessageComponentCollector({
+				time: 60000,
+			})
+
+			// Handle the collector
+			collector.on("collect", async (buttonInteraction) => {
+				// Check if the button was clicked by the user
+				if (buttonInteraction.user.id !== interaction.user.id) {
+					return buttonInteraction.reply({
+						content: "This button is not for you",
+						ephemeral: true,
+					})
+				}
+
+				// Handle the button ID
+				switch (buttonInteraction.customId) {
+					case "previousReminderPage":
+						currentPage--
+						break
+					case "nextReminderPage":
+						currentPage++
+						break
+					default:
+						break
+				}
+
+				row.components[0].setDisabled(currentPage === 1)
+				row.components[1].setDisabled(currentPage === totalPages)
+
+				// Regenerate the embed
+				const newEmbed = await generateEmbed(currentPage)
+				if (!newEmbed.success) {
+					return buttonInteraction.reply({
+						content: newEmbed.error,
+						ephemeral: true,
+					})
+				}
+
+				// Update the message
+				return await buttonInteraction.update({
+					embeds: [newEmbed.embed!],
+					components: [row],
+				})
+			})
+
+			// Handle the collector end event
+			collector.on("end", async () => {
+				row.components[0].setDisabled(true)
+				row.components[1].setDisabled(true)
+
+				return await initMessage.edit({
+					components: [row],
+				})
+			})
+
+			return
+		} else if (subcommand === "clear") {
 			const sent = options.getBoolean("sent")
 			const userId = interaction.user.id
 
@@ -334,11 +431,11 @@ export default <TCommand>{
 			return interaction.reply({
 				content: `Cleared ${reminders.length} reminders`,
 			})
+		} else {
+			return interaction.reply({
+				content: "Invalid subcommand",
+				ephemeral: true,
+			})
 		}
-
-		return interaction.reply({
-			content: "Invalid subcommand",
-			ephemeral: true,
-		})
 	},
 }

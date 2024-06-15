@@ -9,6 +9,7 @@
 	},
 	"scripts": {
 		"lint": "eslint .",
+		"register": "tsx src/deploy-commands.ts",
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc",
 		"start": "node build/deploy-commands.js && node ."

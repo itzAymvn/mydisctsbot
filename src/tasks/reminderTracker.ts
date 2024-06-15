@@ -11,7 +11,6 @@ const reminderTracker: TTask = {
 	interval: 10000, // 10 seconds in milliseconds
 	execute: async (client) => {
 		const reminders = await Reminder.find({ sent: false })
-		const remindersSent: any = []
 		const now = Date.now()
 
 		for (const reminder of reminders) {
@@ -27,14 +26,17 @@ const reminderTracker: TTask = {
 			if (timeLeft <= 0) {
 				const user = await client.users.fetch(userId)
 				await user.send(`⏰ **Reminder:** ${message}`).catch(() => {})
-				remindersSent.push(reminder._id)
+				await Reminder.updateOne({ _id: reminder._id }, { sent: true })
 			} else if (timeLeft <= 10000) {
 				const timeout = setTimeout(async () => {
 					const user = await client.users.fetch(userId)
 					await user
 						.send(`⏰ **Reminder:** ${message}`)
 						.catch(() => {})
-					remindersSent.push(reminder._id)
+					await Reminder.updateOne(
+						{ _id: reminder._id },
+						{ sent: true }
+					)
 
 					// Remove the reminder from remindersWithTimeout once sent
 					const index = remindersWithTimeout.findIndex(
@@ -48,13 +50,6 @@ const reminderTracker: TTask = {
 				// Add the reminder to the remindersWithTimeout array
 				remindersWithTimeout.push({ _id: reminder._id, timeout })
 			}
-		}
-
-		if (remindersSent.length) {
-			await Reminder.updateMany(
-				{ _id: { $in: remindersSent } },
-				{ sent: true }
-			)
 		}
 	},
 }

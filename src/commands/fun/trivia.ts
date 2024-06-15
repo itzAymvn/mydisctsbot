@@ -103,7 +103,7 @@ export default <TCommand>{
 					})
 				)
 		),
-
+	guildOnly: true,
 	async execute(interaction) {
 		const questionTimeout = 15 // in seconds
 		const options = interaction.options as CommandInteractionOptionResolver

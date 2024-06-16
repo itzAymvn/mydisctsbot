@@ -159,6 +159,7 @@ const client = new Client({
 // Initialize a new Collection to store the commands and buttons
 client.commands = new Collection()
 client.buttons = new Collection()
+client.commandCooldowns = new Collection()
 
 // Main function to log in to Discord and load all the commands and events
 const main = async () => {

@@ -25,6 +25,7 @@ declare module "discord.js" {
 	export interface Client {
 		commands: Collection<string, TCommand>
 		buttons: Collection<string, TButton>
+		commandCooldowns: Collection<string, Collection<string, number>>
 	}
 }
 
@@ -51,6 +52,7 @@ export type TCommand = {
 	devsOnly?: boolean
 	guildOnly?: boolean
 	userRequiredPermissions?: bigint[]
+	cooldown?: number
 	autocomplete?(
 		interaction: CommandInteractionOptionResolver,
 		client: Client

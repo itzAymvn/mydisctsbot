@@ -1,9 +1,10 @@
 import { ChatInputCommandInteraction, Client, Collection, Colors, EmbedBuilder } from "discord.js"
+import { TCommand } from "../../types"
 
 export default async function handleCooldown(
 	client: Client,
 	interaction: ChatInputCommandInteraction,
-	command: any
+	command: TCommand
 ) {
 	if (!client.commandCooldowns) {
 		client.commandCooldowns = new Collection()

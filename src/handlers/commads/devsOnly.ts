@@ -1,9 +1,10 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js"
 import isDeveloper from "../../utils/checkDeveloper"
+import { TCommand } from "../../types"
 
 export default async function handleDevsOnly(
 	interaction: ChatInputCommandInteraction,
-	command: any
+	command: TCommand
 ) {
 	if (command.devsOnly && !isDeveloper(interaction.user.id)) {
 		const embed = new EmbedBuilder()

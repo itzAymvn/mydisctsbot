@@ -1,8 +1,9 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js"
+import { TCommand } from "../../types"
 
 export default async function handleUserPermissions(
 	interaction: ChatInputCommandInteraction,
-	command: any
+	command: TCommand
 ) {
 	if (command.userRequiredPermissions) {
 		const guildMember = interaction.guild?.members.cache.get(

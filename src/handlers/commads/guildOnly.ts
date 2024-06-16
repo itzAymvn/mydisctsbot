@@ -1,8 +1,9 @@
 import { ChatInputCommandInteraction, EmbedBuilder } from "discord.js"
+import { TCommand } from "../../types"
 
 export default async function handleGuildOnly(
 	interaction: ChatInputCommandInteraction,
-	command: any
+	command: TCommand
 ) {
 	if (command.guildOnly && !interaction.guild) {
 		const embed = new EmbedBuilder()

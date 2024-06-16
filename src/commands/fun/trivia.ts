@@ -104,6 +104,7 @@ export default <TCommand>{
 				)
 		),
 	guildOnly: true,
+	cooldown: 5000,
 	async execute(interaction) {
 		const questionTimeout = 15 // in seconds
 		const options = interaction.options as CommandInteractionOptionResolver
@@ -111,13 +112,24 @@ export default <TCommand>{
 		const difficultyOption = options.getString("difficulty") || ""
 
 		try {
+			// Defer the response to avoid the 3 second response timeout
+			await interaction.deferReply()
+
 			const url = generateURL(categoryOption, difficultyOption)
 			const response = await fetch(url)
+
 			const data = (await response.json()) as TriviaQuestionResponse
-			const questionData = data.results[0]
-			if (!questionData) {
-				throw new Error("No trivia question data found")
+			if (
+				data.response_code !== 0 ||
+				data.results.length === 0 ||
+				!data.results[0]
+			) {
+				throw new Error(
+					"An error occurred while fetching the trivia question. Please try again in a few seconds."
+				)
 			}
+
+			const questionData = data.results[0]
 
 			const question = questionData.question
 			const category = questionData.category
@@ -155,7 +167,7 @@ export default <TCommand>{
 						: Colors.Red
 				)
 
-			await interaction.reply({ embeds: [embed], fetchReply: true })
+			await interaction.editReply({ embeds: [embed] })
 
 			// Collect user's answer
 			const filter = (response: Message) => {
@@ -194,13 +206,21 @@ export default <TCommand>{
 							correctAnswer
 					)
 				})
-		} catch (error) {
+		} catch (error: any) {
+			const embed = new EmbedBuilder()
+				.setTitle("Error")
+				.setDescription(`An error occurred: ${error.message}`)
+				.setColor(Colors.Red)
+				.setTimestamp()
+
 			if (interaction.replied || interaction.deferred) {
-				return
+				return interaction.followUp({
+					embeds: [embed],
+					ephemeral: true,
+				})
 			} else {
 				return interaction.reply({
-					content:
-						"An error occurred while fetching the trivia question.",
+					embeds: [embed],
 					ephemeral: true,
 				})
 			}

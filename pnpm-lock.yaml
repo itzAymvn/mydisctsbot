@@ -20,6 +20,9 @@ importers:
       file-system-cache:
         specifier: ^2.4.4
         version: 2.4.4
+      he:
+        specifier: ^1.2.0
+        version: 1.2.0
       moment-timezone:
         specifier: ^0.5.45
         version: 0.5.45
@@ -33,6 +36,9 @@ importers:
       '@types/figlet':
         specifier: ^1.5.8
         version: 1.5.8
+      '@types/he':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@types/node':
         specifier: ^20.14.2
         version: 20.14.2
@@ -286,6 +292,9 @@ packages:
 
   '@types/fs-extra@11.0.1':
     resolution: {integrity: sha512-MxObHvNl4A69ofaTRU8DFqvgzzv8s9yRtaPPm5gud9HDNvpB3GPQFvNuTWAI59B9huVGV5jXYJwbCsmBsOGYWA==}
+
+  '@types/he@1.2.3':
+    resolution: {integrity: sha512-q67/qwlxblDzEDvzHhVkwc1gzVWxaNxeyHUBF4xElrvjL11O+Ytze+1fGpBHlr/H9myiBUaUXNnNPmBHxxfAcA==}
 
   '@types/jsonfile@6.1.4':
     resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
@@ -591,6 +600,10 @@ packages:
   has-flag@4.0.0:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
+
+  he@1.2.0:
+    resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
+    hasBin: true
 
   ignore@5.3.1:
     resolution: {integrity: sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==}
@@ -1123,6 +1136,8 @@ snapshots:
       '@types/jsonfile': 6.1.4
       '@types/node': 20.14.2
 
+  '@types/he@1.2.3': {}
+
   '@types/jsonfile@6.1.4':
     dependencies:
       '@types/node': 20.14.2
@@ -1501,6 +1516,8 @@ snapshots:
   graphemer@1.4.0: {}
 
   has-flag@4.0.0: {}
+
+  he@1.2.0: {}
 
   ignore@5.3.1: {}
 

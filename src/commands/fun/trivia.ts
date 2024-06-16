@@ -14,6 +14,7 @@ import {
 	SlashCommandBuilder,
 } from "discord.js"
 import { TCommand } from "../../types"
+import { decode } from "he"
 
 type TriviaQuestionResponse = {
 	response_code: number
@@ -131,7 +132,7 @@ export default <TCommand>{
 
 			const questionData = data.results[0]
 
-			const question = questionData.question
+			const question = decode(questionData.question)
 			const category = questionData.category
 
 			const difficulty =
@@ -149,10 +150,7 @@ export default <TCommand>{
 				.setDescription(
 					`\`•\` **Category:** ${category}\n` +
 						`\`•\` **Difficulty:** ${difficulty}\n` +
-						`\`•\` **Question:** ${question.replace(
-							/&quot;/g,
-							'"'
-						)}\n\n` +
+						`\`•\` **Question:** ${question}\n\n` +
 						allAnswers
 							.map((answer, index) => {
 								return `\`${index + 1}.\` ${answer}`

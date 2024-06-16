@@ -19,6 +19,7 @@ export default <TCommand>{
 	data: new SlashCommandBuilder()
 		.setName("ban")
 		.setDescription("Ban a user from the server.")
+		.setDefaultMemberPermissions(0)
 		.addUserOption((option) =>
 			option
 				.setName("user")

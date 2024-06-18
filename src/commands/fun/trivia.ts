@@ -19,6 +19,7 @@ import {
 import { TCommand } from "../../types"
 import { decode } from "he"
 
+// Define the trivia question response type
 type TriviaQuestionResponse = {
 	response_code: number
 	results: {
@@ -31,6 +32,7 @@ type TriviaQuestionResponse = {
 	}[]
 }
 
+// Define trivia categories and difficulty levels
 const categories = [
 	{ id: 9, name: "General Knowledge" },
 	{ id: 10, name: "Entertainment: Books" },
@@ -60,21 +62,7 @@ const categories = [
 
 const difficultyLevels = ["easy", "medium", "hard"]
 
-const generateURL = (category: string, difficulty: string) => {
-	const url = new URL("https://opentdb.com/api.php")
-	url.searchParams.append("amount", "1")
-	url.searchParams.append("type", "multiple")
-	if (category !== "") {
-		url.searchParams.append("category", category)
-	}
-
-	if (difficulty !== "") {
-		url.searchParams.append("difficulty", difficulty)
-	}
-
-	return url.toString()
-}
-
+// Extend the String prototype to include a capitalize method
 declare global {
 	interface String {
 		capitalize(): string
@@ -85,6 +73,143 @@ String.prototype.capitalize = function () {
 	return this.charAt(0).toUpperCase() + this.slice(1)
 }
 
+// Generate the trivia question URL
+const generateURL = (category: string, difficulty: string): string => {
+	const url = new URL("https://opentdb.com/api.php")
+	url.searchParams.append("amount", "1")
+	url.searchParams.append("type", "multiple")
+	if (category) url.searchParams.append("category", category)
+	if (difficulty) url.searchParams.append("difficulty", difficulty)
+	return url.toString()
+}
+
+// Create an embed for the trivia question
+const createQuestionEmbed = (
+	category: string,
+	difficulty: string,
+	expiration: number,
+	question: string,
+	allAnswers: string[],
+	participants: { user: string; answer: string }[] = []
+): EmbedBuilder => {
+	const participantList = participants.length
+		? participants.map((p, index) => `<@${p.user}>`).join(", ")
+		: "None"
+
+	const embed = new EmbedBuilder()
+		.setTitle("Trivia Question")
+		.setDescription(
+			`Answer the question by selecting one of the options below.`
+		)
+		.addFields(
+			{ name: "Category", value: category, inline: true },
+			{
+				name: "Difficulty",
+				value: difficulty.capitalize(),
+				inline: true,
+			},
+			{
+				name: "Time Remaining",
+				value: `<t:${Math.floor(expiration / 1000)}:R>`,
+				inline: true,
+			},
+			{ name: "Participants", value: participantList },
+			{ name: "Question", value: question },
+			{
+				name: "Options",
+				value: allAnswers
+					.map(
+						(answer, index) => `\`${index + 1}.\` ${decode(answer)}`
+					)
+					.join("\n"),
+			}
+		)
+		.setColor(
+			difficulty === "easy"
+				? Colors.Green
+				: difficulty === "medium"
+				? Colors.Yellow
+				: Colors.Red
+		)
+	return embed
+}
+
+// Create an embed for the trivia results
+const createResultEmbed = (
+	category: string,
+	difficulty: string,
+	question: string,
+	correctAnswer: string,
+	allAnswers: string[],
+	participants: { user: string; answer: string; time: number }[]
+): EmbedBuilder => {
+	const correctParticipants = participants
+		.filter((participant) => participant.answer === correctAnswer)
+		.sort((a, b) => a.time - b.time)
+
+	const winner = correctParticipants[0]
+	const timeTaken = (time: number) =>
+		((time - Date.now() + 30000) / 1000).toFixed(2)
+
+	const embed = new EmbedBuilder()
+		.setTitle("Trivia Results")
+		.setDescription(`Here are the results of the trivia question.`)
+		.addFields(
+			{ name: "Category", value: category, inline: true },
+			{
+				name: "Difficulty",
+				value: difficulty.capitalize(),
+				inline: true,
+			},
+			{ name: "Question", value: question },
+			{ name: "Correct Answer", value: correctAnswer },
+			{ name: "Participants", value: `${participants.length}` },
+			{
+				name: "Correct Participants",
+				value: correctParticipants.length
+					? correctParticipants
+							.map(
+								(participant, index) =>
+									`\`${index + 1}.\` <@${
+										participant.user
+									}> (${timeTaken(participant.time)}s)`
+							)
+							.join("\n")
+					: "None",
+			},
+			{
+				name: "Winner",
+				value: winner
+					? `<@${winner.user}> (${timeTaken(winner.time)}s)`
+					: "None",
+			}
+		)
+		.setColor(
+			difficulty === "easy"
+				? Colors.Green
+				: difficulty === "medium"
+				? Colors.Yellow
+				: Colors.Red
+		)
+	return embed
+}
+
+// Create buttons for the trivia answers
+const createAnswerButtons = (
+	allAnswers: string[]
+): ActionRowBuilder<ButtonBuilder> => {
+	const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+		allAnswers.map((answer, index) => {
+			return new ButtonBuilder()
+				.setCustomId(`trivia-answer-${index}`)
+				.setLabel(`${index + 1}`)
+				.setStyle(ButtonStyle.Primary)
+		})
+	)
+	return row
+}
+
+// Main command execution
 export default <TCommand>{
 	data: new SlashCommandBuilder()
 		.setName("trivia")
@@ -95,12 +220,10 @@ export default <TCommand>{
 				.setDescription("The category of the trivia question")
 				.setRequired(false)
 				.addChoices(
-					categories.map((category) => {
-						return {
-							name: category.name,
-							value: category.id.toString(),
-						}
-					})
+					categories.map((category) => ({
+						name: category.name.capitalize(),
+						value: category.id.toString(),
+					}))
 				)
 		)
 		.addStringOption((option) =>
@@ -109,12 +232,10 @@ export default <TCommand>{
 				.setRequired(false)
 				.setDescription("The difficulty of the trivia question")
 				.addChoices(
-					difficultyLevels.map((difficulty) => {
-						return {
-							name: difficulty,
-							value: difficulty,
-						}
-					})
+					difficultyLevels.map((difficulty) => ({
+						name: difficulty,
+						value: difficulty,
+					}))
 				)
 		),
 	guildOnly: true,
@@ -126,16 +247,15 @@ export default <TCommand>{
 		const difficultyOption = options.getString("difficulty") || ""
 
 		try {
-			// Defer the response to avoid the 3 second response timeout
 			await interaction.deferReply()
 
 			const url = generateURL(categoryOption, difficultyOption)
 			const response = await fetch(url)
-
 			const data = (await response.json()) as TriviaQuestionResponse
+
 			if (
 				data.response_code !== 0 ||
-				data.results.length === 0 ||
+				!data.results.length ||
 				!data.results[0]
 			) {
 				throw new Error(
@@ -146,8 +266,7 @@ export default <TCommand>{
 			const questionData = data.results[0]
 			const question = decode(questionData.question)
 			const category = questionData.category
-
-			const difficulty = questionData.difficulty.capitalize()
+			const difficulty = questionData.difficulty
 			const correctAnswer = questionData.correct_answer
 			const incorrectAnswers = questionData.incorrect_answers
 			const allAnswers = [...incorrectAnswers, correctAnswer].sort(
@@ -155,221 +274,99 @@ export default <TCommand>{
 			)
 			const expiration = Date.now() + questionTimeout * 1000
 
-			const categoryString = `\`•\` **Category:** ${category}\n`
-			const difficultyString = `\`•\` **Difficulty:** ${difficulty}\n`
-			const timeString = `\`•\` **Time:** <t:${Math.floor(
-				expiration / 1000
-			)}:R>\n`
-			const timesupString = `\`•\` **Time's up!**\n`
-			const questionString = `\`•\` **Question:** ${question}\n`
-			const allAnswersString = allAnswers
-				.map((answer, index) => {
-					return `\`${index + 1}.\` ${answer}`
-				})
-				.join("\n")
-
-			// Create the trivia question message
-			const embed = new EmbedBuilder()
-				.setTitle("Trivia Question")
-				.setDescription(
-					categoryString +
-						difficultyString +
-						timeString +
-						questionString +
-						allAnswersString
-				)
-				.setColor(
-					difficulty === "easy"
-						? Colors.Green
-						: difficulty === "medium"
-						? Colors.Yellow
-						: Colors.Red
-				)
-
-			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-				allAnswers.map((answer, index) => {
-					return new ButtonBuilder()
-						.setCustomId(`trivia-answer-${index}`)
-						.setLabel((index + 1).toString())
-						.setStyle(ButtonStyle.Primary)
-				})
+			const embed = createQuestionEmbed(
+				category,
+				difficulty,
+				expiration,
+				question,
+				allAnswers
 			)
+
+			const row = createAnswerButtons(allAnswers)
 
 			const message = await interaction.editReply({
 				embeds: [embed],
 				components: [row],
 			})
 
-			type TParticipant = {
-				user: string // the user who answered
-				answer: string // the index of the answer
-				time: number // when the user answered
-			}
-			const participants: TParticipant[] = []
-
-			// Give everyone 30 seconds to answer the question
-			const filter = (i: any) => i.customId.startsWith("trivia-answer")
 			const collector = message.createMessageComponentCollector({
-				filter,
 				time: questionTimeout * 1000,
 			})
 
+			const participants: {
+				user: string
+				answer: string
+				time: number
+			}[] = []
+
 			collector.on("collect", (i: ButtonInteraction) => {
-				// if user has already answered, ignore
-				if (
-					participants.some(
-						(participant) => participant.user === i.user.id
-					)
-				) {
+				if (participants.some((p) => p.user === i.user.id)) {
 					return i.reply({
-						content: `You have already answered the question!`,
+						content: "You have already answered.",
 						ephemeral: true,
 					})
 				}
 
-				const answerIndex = parseInt(i.customId.split("-")[2]!)
-				const answer = allAnswers[answerIndex]
-				if (!answer) {
+				const answerIndex = parseInt(i.customId.split("-").pop()!, 10)
+				const selectedAnswer = allAnswers[answerIndex]
+
+				if (!selectedAnswer) {
 					return i.reply({
-						content: `Invalid answer!`,
+						content: "Invalid answer.",
 						ephemeral: true,
 					})
 				}
 
 				participants.push({
 					user: i.user.id,
-					answer: answer,
+					answer: selectedAnswer,
 					time: Date.now(),
 				})
 
-				// Update the message to show total participants (real-time)
-				const totalParticipants = participants.length
-				const totalParticipantsString = `\`•\` **Participants:** ${totalParticipants}\n`
-
-				const embed = new EmbedBuilder()
-					.setTitle("Trivia Question")
-					.setDescription(
-						categoryString +
-							difficultyString +
-							timeString +
-							totalParticipantsString +
-							questionString +
-							allAnswersString
-					)
-					.setColor(
-						difficulty === "easy"
-							? Colors.Green
-							: difficulty === "medium"
-							? Colors.Yellow
-							: Colors.Red
-					)
+				const updatedEmbed = createQuestionEmbed(
+					category,
+					difficulty,
+					expiration,
+					question,
+					allAnswers,
+					participants
+				)
 
 				message.edit({
-					embeds: [embed],
-					components: [row],
+					embeds: [updatedEmbed],
 				})
 
-				// Tell the user that their answer was recorded
-				return i.reply({
-					content: `Your answer has been recorded!`,
-					ephemeral: true,
-				})
+				return i.reply({ content: "Answer recorded.", ephemeral: true })
 			})
 
-			collector.on("end", (c, r) => {
-				if (r !== "time") return
+			collector.on("end", async () => {
+				const resultEmbed = createResultEmbed(
+					category,
+					difficulty,
+					question,
+					correctAnswer,
+					allAnswers,
+					participants
+				)
 
-				// if no participants, return
-				if (participants.length === 0) {
-					const embed = new EmbedBuilder()
-						.setTitle("Trivia Question")
-						.setDescription(
-							categoryString +
-								difficultyString +
-								timesupString +
-								questionString +
-								allAnswersString +
-								`\n\n**NO PARTICIPANTS**`
-						)
-						.setColor(
-							difficulty === "easy"
-								? Colors.Green
-								: difficulty === "medium"
-								? Colors.Yellow
-								: Colors.Red
-						)
+				const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+					allAnswers.map((answer, index) => {
+						const participantsAnswered = participants.filter(
+							(p) => p.answer === answer
+						).length
 
-					return message.edit({
-						embeds: [embed],
-						components: [],
+						return new ButtonBuilder()
+							.setCustomId(`trivia-answer-${index}`)
+							.setLabel(`${index + 1} (${participantsAnswered})`)
+							.setStyle(ButtonStyle.Secondary)
+							.setDisabled(true)
 					})
-				} else {
-					const correctParticipants = participants
-						.filter(
-							(participant) =>
-								participant.answer === correctAnswer
-						)
-						.sort((a, b) => a.time - b.time)
-					const winner = correctParticipants[0]
+				)
 
-					const correctAnswerString = `\`•\` **Correct Answer:** ${correctAnswer}\n`
-					const correctParticipantsString =
-						correctParticipants.length > 0
-							? `\`•\` **Correct Participants:**\n${correctParticipants
-									.map((participant, index) => {
-										return `\`${index + 1}.\` <@${
-											participant.user
-										}>`
-									})
-									.join("\n")}\n`
-							: `\`•\` **Correct Participants:**\n**NO PARTICIPANTS**\n`
-					const winnerString = winner
-						? `\n\n**Winner:** <@${winner.user}>`
-						: ""
-
-					const embed = new EmbedBuilder()
-						.setTitle("Trivia Question")
-						.setDescription(
-							categoryString +
-								difficultyString +
-								timesupString +
-								questionString +
-								correctAnswerString +
-								correctParticipantsString +
-								winnerString
-						)
-						.setColor(
-							difficulty === "easy"
-								? Colors.Green
-								: difficulty === "medium"
-								? Colors.Yellow
-								: Colors.Red
-						)
-
-					// Edit button so each buttons shows how many participants answered
-					const row =
-						new ActionRowBuilder<ButtonBuilder>().addComponents(
-							allAnswers.map((answer, index) => {
-								const participantsCount = participants.filter(
-									(participant) =>
-										participant.answer === answer
-								).length
-
-								return new ButtonBuilder()
-									.setCustomId(`trivia-answer-${index}`)
-									.setLabel(
-										`${index + 1} (${participantsCount})`
-									)
-									.setStyle(ButtonStyle.Primary)
-									.setDisabled(true)
-							})
-						)
-
-					return message.edit({
-						embeds: [embed],
-						components: [row],
-					})
-				}
+				return message.edit({
+					embeds: [resultEmbed],
+					components: [row],
+				})
 			})
 
 			return
@@ -386,10 +383,7 @@ export default <TCommand>{
 					ephemeral: true,
 				})
 			} else {
-				return interaction.reply({
-					embeds: [embed],
-					ephemeral: true,
-				})
+				return interaction.reply({ embeds: [embed], ephemeral: true })
 			}
 		}
 	},

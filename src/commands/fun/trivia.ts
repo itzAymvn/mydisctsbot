@@ -7,10 +7,13 @@
  */
 
 import {
+	ActionRowBuilder,
+	ButtonBuilder,
+	ButtonInteraction,
+	ButtonStyle,
 	Colors,
 	CommandInteractionOptionResolver,
 	EmbedBuilder,
-	Message,
 	SlashCommandBuilder,
 } from "discord.js"
 import { TCommand } from "../../types"
@@ -72,6 +75,16 @@ const generateURL = (category: string, difficulty: string) => {
 	return url.toString()
 }
 
+declare global {
+	interface String {
+		capitalize(): string
+	}
+}
+
+String.prototype.capitalize = function () {
+	return this.charAt(0).toUpperCase() + this.slice(1)
+}
+
 export default <TCommand>{
 	data: new SlashCommandBuilder()
 		.setName("trivia")
@@ -107,7 +120,7 @@ export default <TCommand>{
 	guildOnly: true,
 	cooldown: 5000,
 	async execute(interaction) {
-		const questionTimeout = 15 // in seconds
+		const questionTimeout = 30 // in seconds
 		const options = interaction.options as CommandInteractionOptionResolver
 		const categoryOption = options.getString("category") || ""
 		const difficultyOption = options.getString("difficulty") || ""
@@ -131,31 +144,39 @@ export default <TCommand>{
 			}
 
 			const questionData = data.results[0]
-
 			const question = decode(questionData.question)
 			const category = questionData.category
 
-			const difficulty =
-				questionData.difficulty.charAt(0).toUpperCase() +
-				questionData.difficulty.slice(1)
+			const difficulty = questionData.difficulty.capitalize()
 			const correctAnswer = questionData.correct_answer
 			const incorrectAnswers = questionData.incorrect_answers
 			const allAnswers = [...incorrectAnswers, correctAnswer].sort(
 				() => Math.random() - 0.5
 			)
+			const expiration = Date.now() + questionTimeout * 1000
+
+			const categoryString = `\`•\` **Category:** ${category}\n`
+			const difficultyString = `\`•\` **Difficulty:** ${difficulty}\n`
+			const timeString = `\`•\` **Time:** <t:${Math.floor(
+				expiration / 1000
+			)}:R>\n`
+			const timesupString = `\`•\` **Time's up!**\n`
+			const questionString = `\`•\` **Question:** ${question}\n`
+			const allAnswersString = allAnswers
+				.map((answer, index) => {
+					return `\`${index + 1}.\` ${answer}`
+				})
+				.join("\n")
 
 			// Create the trivia question message
 			const embed = new EmbedBuilder()
 				.setTitle("Trivia Question")
 				.setDescription(
-					`\`•\` **Category:** ${category}\n` +
-						`\`•\` **Difficulty:** ${difficulty}\n` +
-						`\`•\` **Question:** ${question}\n\n` +
-						allAnswers
-							.map((answer, index) => {
-								return `\`${index + 1}.\` ${answer}`
-							})
-							.join("\n")
+					categoryString +
+						difficultyString +
+						timeString +
+						questionString +
+						allAnswersString
 				)
 				.setColor(
 					difficulty === "easy"
@@ -165,45 +186,193 @@ export default <TCommand>{
 						: Colors.Red
 				)
 
-			await interaction.editReply({ embeds: [embed] })
+			const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+				allAnswers.map((answer, index) => {
+					return new ButtonBuilder()
+						.setCustomId(`trivia-answer-${index}`)
+						.setLabel((index + 1).toString())
+						.setStyle(ButtonStyle.Primary)
+				})
+			)
 
-			// Collect user's answer
-			const filter = (response: Message) => {
-				const choice = parseInt(response.content)
-				return (
-					response.author.id === interaction.user.id &&
-					!isNaN(choice) &&
-					choice > 0 &&
-					choice <= allAnswers.length
-				)
+			const message = await interaction.editReply({
+				embeds: [embed],
+				components: [row],
+			})
+
+			type TParticipant = {
+				user: string // the user who answered
+				answer: string // the index of the answer
+				time: number // when the user answered
 			}
+			const participants: TParticipant[] = []
 
-			return await interaction
-				.channel!.awaitMessages({
-					filter,
-					max: 1,
-					time: questionTimeout * 1000,
-					errors: ["time"],
-				})
-				.then((collected) => {
-					const userAnswer = collected.first()!.content
-					const userChoice = allAnswers[parseInt(userAnswer) - 1]
+			// Give everyone 30 seconds to answer the question
+			const filter = (i: any) => i.customId.startsWith("trivia-answer")
+			const collector = message.createMessageComponentCollector({
+				filter,
+				time: questionTimeout * 1000,
+			})
 
-					// Check if the answer is correct
-					if (userChoice === correctAnswer) {
-						return interaction.followUp("Correct! 🎉")
-					} else {
-						return interaction.followUp(
-							`❌ Incorrect. The correct answer was: ${correctAnswer}`
-						)
-					}
-				})
-				.catch(() => {
-					return interaction.followUp(
-						"Time's up! ⏰\nThe correct answer was: " +
-							correctAnswer
+			collector.on("collect", (i: ButtonInteraction) => {
+				// if user has already answered, ignore
+				if (
+					participants.some(
+						(participant) => participant.user === i.user.id
 					)
+				) {
+					return i.reply({
+						content: `You have already answered the question!`,
+						ephemeral: true,
+					})
+				}
+
+				const answerIndex = parseInt(i.customId.split("-")[2]!)
+				const answer = allAnswers[answerIndex]
+				if (!answer) {
+					return i.reply({
+						content: `Invalid answer!`,
+						ephemeral: true,
+					})
+				}
+
+				participants.push({
+					user: i.user.id,
+					answer: answer,
+					time: Date.now(),
 				})
+
+				// Update the message to show total participants (real-time)
+				const totalParticipants = participants.length
+				const totalParticipantsString = `\`•\` **Participants:** ${totalParticipants}\n`
+
+				const embed = new EmbedBuilder()
+					.setTitle("Trivia Question")
+					.setDescription(
+						categoryString +
+							difficultyString +
+							timeString +
+							totalParticipantsString +
+							questionString +
+							allAnswersString
+					)
+					.setColor(
+						difficulty === "easy"
+							? Colors.Green
+							: difficulty === "medium"
+							? Colors.Yellow
+							: Colors.Red
+					)
+
+				message.edit({
+					embeds: [embed],
+					components: [row],
+				})
+
+				// Tell the user that their answer was recorded
+				return i.reply({
+					content: `Your answer has been recorded!`,
+					ephemeral: true,
+				})
+			})
+
+			collector.on("end", (c, r) => {
+				if (r !== "time") return
+
+				// if no participants, return
+				if (participants.length === 0) {
+					const embed = new EmbedBuilder()
+						.setTitle("Trivia Question")
+						.setDescription(
+							categoryString +
+								difficultyString +
+								timesupString +
+								questionString +
+								allAnswersString +
+								`\n\n**NO PARTICIPANTS**`
+						)
+						.setColor(
+							difficulty === "easy"
+								? Colors.Green
+								: difficulty === "medium"
+								? Colors.Yellow
+								: Colors.Red
+						)
+
+					return message.edit({
+						embeds: [embed],
+						components: [],
+					})
+				} else {
+					const correctParticipants = participants
+						.filter(
+							(participant) =>
+								participant.answer === correctAnswer
+						)
+						.sort((a, b) => a.time - b.time)
+					const winner = correctParticipants[0]
+
+					const correctAnswerString = `\`•\` **Correct Answer:** ${correctAnswer}\n`
+					const correctParticipantsString =
+						correctParticipants.length > 0
+							? `\`•\` **Correct Participants:**\n${correctParticipants
+									.map((participant, index) => {
+										return `\`${index + 1}.\` <@${
+											participant.user
+										}>`
+									})
+									.join("\n")}\n`
+							: `\`•\` **Correct Participants:**\n**NO PARTICIPANTS**\n`
+					const winnerString = winner
+						? `\n\n**Winner:** <@${winner.user}>`
+						: ""
+
+					const embed = new EmbedBuilder()
+						.setTitle("Trivia Question")
+						.setDescription(
+							categoryString +
+								difficultyString +
+								timesupString +
+								questionString +
+								correctAnswerString +
+								correctParticipantsString +
+								winnerString
+						)
+						.setColor(
+							difficulty === "easy"
+								? Colors.Green
+								: difficulty === "medium"
+								? Colors.Yellow
+								: Colors.Red
+						)
+
+					// Edit button so each buttons shows how many participants answered
+					const row =
+						new ActionRowBuilder<ButtonBuilder>().addComponents(
+							allAnswers.map((answer, index) => {
+								const participantsCount = participants.filter(
+									(participant) =>
+										participant.answer === answer
+								).length
+
+								return new ButtonBuilder()
+									.setCustomId(`trivia-answer-${index}`)
+									.setLabel(
+										`${index + 1} (${participantsCount})`
+									)
+									.setStyle(ButtonStyle.Primary)
+									.setDisabled(true)
+							})
+						)
+
+					return message.edit({
+						embeds: [embed],
+						components: [row],
+					})
+				}
+			})
+
+			return
 		} catch (error: any) {
 			const embed = new EmbedBuilder()
 				.setTitle("Error")

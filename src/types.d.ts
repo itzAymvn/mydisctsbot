@@ -7,6 +7,7 @@
  */
 
 import {
+	AutocompleteInteraction,
 	ButtonBuilder,
 	ButtonInteraction,
 	Client,
@@ -54,7 +55,7 @@ export type TCommand = {
 	userRequiredPermissions?: bigint[]
 	cooldown?: number
 	autocomplete?(
-		interaction: CommandInteractionOptionResolver,
+		interaction: AutocompleteInteraction,
 		client: Client
 	): Promise<void>
 	execute(interaction: CommandInteraction, client: Client): Promise<any>

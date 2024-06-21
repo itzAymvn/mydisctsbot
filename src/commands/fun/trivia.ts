@@ -332,6 +332,13 @@ export default <TCommand>{
 					participants
 				)
 
+                if (!message.editable) {
+                    return i.followUp({
+                        embeds: [updatedEmbed],
+                        components: [row],
+                    })
+                }
+
 				message.edit({
 					embeds: [updatedEmbed],
 				})
@@ -362,6 +369,13 @@ export default <TCommand>{
 							.setDisabled(true)
 					})
 				)
+
+				if (!message.editable) {
+					return interaction.followUp({
+						embeds: [resultEmbed],
+						components: [row],
+					})
+				}
 
 				return message.edit({
 					embeds: [resultEmbed],

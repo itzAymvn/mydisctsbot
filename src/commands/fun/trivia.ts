@@ -267,7 +267,7 @@ export default <TCommand>{
 			const question = decode(questionData.question)
 			const category = questionData.category
 			const difficulty = questionData.difficulty
-			const correctAnswer = questionData.correct_answer
+			const correctAnswer = decode(questionData.correct_answer)
 			const incorrectAnswers = questionData.incorrect_answers
 			const allAnswers = [...incorrectAnswers, correctAnswer].sort(
 				() => Math.random() - 0.5

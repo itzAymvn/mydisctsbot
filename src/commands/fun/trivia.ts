@@ -369,7 +369,7 @@ export default <TCommand>{
 					embeds: [updatedEmbed],
 				})
 
-				return i.reply({ content: "Your answer has been recorded." })
+				return i.reply({ content: "Your answer has been recorded.", ephemeral: true,})
 			})
 
 			collector.on("end", async () => {

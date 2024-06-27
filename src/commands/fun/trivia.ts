@@ -18,6 +18,7 @@ import {
 } from "discord.js"
 import { TCommand } from "../../types"
 import { decode } from "he"
+import Trivia from "../../database/models/Trivia"
 
 // Define the trivia question response type
 type TriviaQuestionResponse = {
@@ -93,7 +94,7 @@ const createQuestionEmbed = (
 	participants: { user: string; answer: string }[] = []
 ): EmbedBuilder => {
 	const participantList = participants.length
-		? participants.map((p, index) => `<@${p.user}>`).join(", ")
+		? participants.map((p) => `<@${p.user}>`).join(", ")
 		: "None"
 
 	const embed = new EmbedBuilder()
@@ -146,6 +147,15 @@ const createResultEmbed = (
 	const correctParticipants = participants
 		.filter((participant) => participant.answer === correctAnswer)
 		.sort((a, b) => a.time - b.time)
+		// add a points gained field
+		// add a total points field
+		.map((participant, index) => {
+			const points = calculatePoints(difficulty, index)
+			return {
+				...participant,
+				points,
+			}
+		})
 
 	const winner = correctParticipants[0]
 	const timeTaken = (time: number) =>
@@ -172,7 +182,9 @@ const createResultEmbed = (
 								(participant, index) =>
 									`\`${index + 1}.\` <@${
 										participant.user
-									}> (${timeTaken(participant.time)}s)`
+									}> (${timeTaken(participant.time)}s, +${
+										participant.points
+									}pts)`
 							)
 							.join("\n")
 					: "None",
@@ -207,6 +219,17 @@ const createAnswerButtons = (
 		})
 	)
 	return row
+}
+
+// Calculate points based on difficulty and position
+const calculatePoints = (difficulty: string, position: number): number => {
+	const pointsMap: Record<string, number[]> = {
+		easy: [3, 2, 1],
+		medium: [5, 3, 2],
+		hard: [8, 5, 3],
+	}
+
+	return pointsMap[difficulty]?.[position] || 0
 }
 
 // Main command execution
@@ -302,7 +325,10 @@ export default <TCommand>{
 			collector.on("collect", (i: ButtonInteraction) => {
 				if (participants.some((p) => p.user === i.user.id)) {
 					return i.reply({
-						content: "You have already answered.",
+						content: `You have already answered the question. Your answer was ${
+							participants.find((p) => p.user === i.user.id)
+								?.answer
+						}.`,
 						ephemeral: true,
 					})
 				}
@@ -332,18 +358,18 @@ export default <TCommand>{
 					participants
 				)
 
-                if (!message.editable) {
-                    return i.followUp({
-                        embeds: [updatedEmbed],
-                        components: [row],
-                    })
-                }
+				if (!message.editable) {
+					return i.followUp({
+						embeds: [updatedEmbed],
+						components: [row],
+					})
+				}
 
 				message.edit({
 					embeds: [updatedEmbed],
 				})
 
-				return i.reply({ content: "Answer recorded.", ephemeral: true })
+				return i.reply({ content: "Your answer has been recorded." })
 			})
 
 			collector.on("end", async () => {
@@ -369,6 +395,41 @@ export default <TCommand>{
 							.setDisabled(true)
 					})
 				)
+
+				const correctParticipants = participants
+					.filter(
+						(participant) => participant.answer === correctAnswer
+					)
+					.sort((a, b) => a.time - b.time)
+
+				const updateParticipants = async () => {
+					for (const [
+						index,
+						participant,
+					] of correctParticipants.entries()) {
+						const points = calculatePoints(difficulty, index)
+
+						if (points > 0) {
+							const userTrivia = await Trivia.findOneAndUpdate(
+								{ userId: participant.user },
+								{
+									$inc: {
+										totalCorrect: 1,
+										points: points,
+										[`total${difficulty.capitalize()}`]: 1,
+									},
+								},
+								{ new: true, upsert: true }
+							)
+
+							console.log(
+								`User ${userTrivia.userId} awarded ${points} points.`
+							)
+						}
+					}
+				}
+
+				await updateParticipants()
 
 				if (!message.editable) {
 					return interaction.followUp({

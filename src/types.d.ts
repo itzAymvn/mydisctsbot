@@ -85,3 +85,12 @@ export type TTask = {
 	interval: number | null
 	execute(client: Client): Promise<void>
 }
+
+export type ITrivia = {
+	userId: string
+	totalCorrect: number
+	totalEasy: number
+	totalMedium: number
+	totalHard: number
+	points: number
+}

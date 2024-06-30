@@ -18,6 +18,7 @@ import {
 	SlashCommandBuilder,
 	SlashCommandOptionsOnlyBuilder,
 	SlashCommandSubcommandBuilder,
+	User,
 } from "discord.js"
 import { Document } from "mongoose"
 
@@ -94,3 +95,164 @@ export type ITrivia = {
 	totalHard: number
 	points: number
 }
+
+/*
+{
+  result: 'reject',
+  player: User {
+    id: '1169294300597727387',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 4194368 },
+    username: 'aymvn',
+    globalName: 'Ayman',
+    discriminator: '0',
+    avatar: 'a22a4b2482161f4533f47b4f90c58267',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  },
+  opponent: User {
+    id: '1228391260302348291',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 0 },
+    username: 'itzaymvn',
+    globalName: 'Aymvn',
+    discriminator: '0',
+    avatar: 'b694ec888e0084a487ddef248854e42c',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  }
+}
+{
+  result: 'win',
+  player: User {
+    id: '1169294300597727387',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 4194368 },
+    username: 'aymvn',
+    globalName: 'Ayman',
+    discriminator: '0',
+    avatar: 'a22a4b2482161f4533f47b4f90c58267',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  },
+  opponent: User {
+    id: '1228391260302348291',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 0 },
+    username: 'itzaymvn',
+    globalName: 'Aymvn',
+    discriminator: '0',
+    avatar: 'b694ec888e0084a487ddef248854e42c',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  },
+  gameBoard: [
+    2, 1, 0, 2, 1,
+    1, 2, 0, 0
+  ],
+  winner: '1228391260302348291'
+}
+{
+  result: 'time',
+  player: User {
+    id: '1169294300597727387',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 4194368 },
+    username: 'aymvn',
+    globalName: 'Ayman',
+    discriminator: '0',
+    avatar: 'a22a4b2482161f4533f47b4f90c58267',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  },
+  opponent: User {
+    id: '1228391260302348291',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 0 },
+    username: 'itzaymvn',
+    globalName: 'Aymvn',
+    discriminator: '0',
+    avatar: 'b694ec888e0084a487ddef248854e42c',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  }
+}
+  {
+  result: 'tie',
+  player: User {
+    id: '1169294300597727387',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 4194368 },
+    username: 'aymvn',
+    globalName: 'Ayman',
+    discriminator: '0',
+    avatar: 'a22a4b2482161f4533f47b4f90c58267',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  },
+  opponent: User {
+    id: '1228391260302348291',
+    bot: false,
+    system: false,
+    flags: UserFlagsBitField { bitfield: 0 },
+    username: 'itzaymvn',
+    globalName: 'Aymvn',
+    discriminator: '0',
+    avatar: 'b694ec888e0084a487ddef248854e42c',
+    banner: null,
+    accentColor: null,
+    avatarDecoration: null
+  },
+  gameBoard: [
+    1, 2, 1, 1, 1,
+    2, 2, 1, 2
+  ]
+}
+*/
+
+type WinTicTacToeResult = {
+	result: "win"
+	player: User
+	opponent: User
+	gameBoard: number[]
+	winner: string
+}
+
+type RejectTicTacToeResult = {
+	result: "reject"
+	player: User
+	opponent: User
+}
+
+type TimeTicTacToeResult = {
+	result: "time"
+	player: User
+	opponent: User
+}
+
+type TieTicTacToeResult = {
+	result: "tie"
+	player: User
+	opponent: User
+	gameBoard: number[]
+}
+
+export type TicTacToeResult =
+	| WinTicTacToeResult
+	| RejectTicTacToeResult
+	| TimeTicTacToeResult
+	| TieTicTacToeResult

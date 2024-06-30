@@ -37,6 +37,7 @@
 		"typescript-eslint": "^7.13.0"
 	},
 	"dependencies": {
+		"discord-gamecord": "^4.4.2",
 		"discord.js": "^14.15.3",
 		"dotenv": "^16.4.5",
 		"figlet": "^1.7.0",

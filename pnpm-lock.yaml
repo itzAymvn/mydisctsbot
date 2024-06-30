@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       discord-gamecord:
-        specifier: ^4.4.2
-        version: 4.4.2
+        specifier: github:Juhan280/Gamecord
+        version: https://codeload.github.com/Juhan280/Gamecord/tar.gz/831d12828401bc3fb0089bcbbb2cd5059c733b90
       discord.js:
         specifier: ^14.15.3
         version: 14.15.3
@@ -912,8 +912,9 @@ packages:
   discord-api-types@0.37.83:
     resolution: {integrity: sha512-urGGYeWtWNYMKnYlZnOnDHm8fVRffQs3U0SpE8RHeiuLKb/u92APS8HoQnPTFbnXmY1vVnXjXO4dOxcAn3J+DA==}
 
-  discord-gamecord@4.4.2:
-    resolution: {integrity: sha512-SRrfAG9MLjK0Xw/2+hN9HfmIqkl+0TVPTwQXXOvwXpzMBJbpsY+KliTl6lQOur8Qb61rhOAmwMPWv/idQDYYMA==}
+  discord-gamecord@https://codeload.github.com/Juhan280/Gamecord/tar.gz/831d12828401bc3fb0089bcbbb2cd5059c733b90:
+    resolution: {tarball: https://codeload.github.com/Juhan280/Gamecord/tar.gz/831d12828401bc3fb0089bcbbb2cd5059c733b90}
+    version: 4.2.0
 
   discord.js@14.15.3:
     resolution: {integrity: sha512-/UJDQO10VuU6wQPglA4kz2bw2ngeeSbogiIPx/TsnctfzV/tNf+q+i1HlgtX1OGpeOBpJH9erZQNO5oRM2uAtQ==}
@@ -2955,7 +2956,7 @@ snapshots:
 
   discord-api-types@0.37.83: {}
 
-  discord-gamecord@4.4.2:
+  discord-gamecord@https://codeload.github.com/Juhan280/Gamecord/tar.gz/831d12828401bc3fb0089bcbbb2cd5059c733b90:
     dependencies:
       discord.js: 14.15.3
       html-entities: 2.5.2

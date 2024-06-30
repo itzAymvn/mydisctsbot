@@ -7,11 +7,12 @@
  */
 
 import {
+	ChatInputCommandInteraction,
 	CommandInteractionOptionResolver,
 	SlashCommandBuilder,
 } from "discord.js"
 import { TCommand } from "../../types"
-const { TicTacToe } = require("discord-gamecord")
+import { TicTacToe } from "discord-gamecord" // @ts-ignore
 
 export default <TCommand>{
 	data: new SlashCommandBuilder()
@@ -53,8 +54,8 @@ export default <TCommand>{
 		}
 
 		const Game = new TicTacToe({
-			message: interaction,
-			isSlashGame: false,
+			message: interaction as ChatInputCommandInteraction,
+			isSlashGame: true,
 			opponent: opponent,
 			embed: {
 				title: "Tic Tac Toe",

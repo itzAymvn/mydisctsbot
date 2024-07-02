@@ -5,8 +5,15 @@ import { config } from "dotenv"
 config()
 
 // Grab the token and client ID from the .env file
-const token = process.env.DISCORD_TOKEN
-const clientId = process.env.DISCORD_APP_ID
+const token =
+	process.env.NODE_ENV === "development"
+		? process.env.DISCORD_TOKEN_DEV
+		: process.env.DISCORD_TOKEN
+const clientId =
+	process.env.NODE_ENV === "development"
+		? process.env.DISCORD_APP_ID_DEV
+		: process.env.DISCORD_APP_ID
+
 const guildId = process.env.DISCORD_GUILD_ID
 
 // Check if all the required environment variables are set

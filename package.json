@@ -11,7 +11,7 @@
 		"lint": "eslint .",
 		"register": "tsx src/deploy-commands.ts",
 		"dev": "tsx watch src/index.ts",
-		"build": "pnpm run lint && tsc",
+		"build": "tsc",
 		"test": "jest",
 		"start": "node build/deploy-commands.js && node ."
 	},

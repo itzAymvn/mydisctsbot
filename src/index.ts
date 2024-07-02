@@ -164,7 +164,7 @@ client.commandCooldowns = new Collection()
 // Main function to log in to Discord and load all the commands and events
 const main = async () => {
 	// Log in to Discord with your client's token
-	if (!process.env.DISCORD_TOKEN) {
+	if (!process.env.DISCORD_TOKEN && !process.env.DISCORD_TOKEN_DEV) {
 		throw new Error("Please provide a valid token in the .env file")
 	}
 
@@ -175,7 +175,12 @@ const main = async () => {
 	await loadTasks()
 
 	// Log in to Discord
-	await client.login(process.env.DISCORD_TOKEN)
+	const token =
+		process.env.NODE_ENV === "development"
+			? process.env.DISCORD_TOKEN_DEV
+			: process.env.DISCORD_TOKEN
+
+	await client.login(token)
 }
 
 // Call the main function to start the bot

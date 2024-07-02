@@ -20,7 +20,12 @@ export default <TCommand>{
 		.setName("invite")
 		.setDescription("Invite the bot to your server!"),
 	async execute(interaction) {
-		const link = `https://discord.com/api/oauth2/authorize?client_id=${process.env.DISCORD_APP_ID}&permissions=8&scope=bot%20applications.commands`
+		const appId =
+			process.env.NODE_ENV === "development"
+				? process.env.DISCORD_APP_ID_DEV
+				: process.env.DISCORD_APP_ID
+
+		const link = `https://discord.com/api/oauth2/authorize?client_id=${appId}&permissions=8&scope=bot%20applications.commands`
 
 		// Create a new embed
 		const embed = new EmbedBuilder()

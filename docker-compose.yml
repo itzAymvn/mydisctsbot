@@ -1,0 +1,48 @@
+services:
+  bot:
+    build: .
+    container_name: discord-bot
+    restart: always
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN} # .env file
+      - DISCORD_APP_ID=${DISCORD_APP_ID} # .env file
+      - DISCORD_GUILD_ID=${DISCORD_GUILD_ID} # .env file
+      - DISCORD_GUILD_BUGS_CHANNEL_ID=${DISCORD_GUILD_BUGS_CHANNEL_ID} # .env file
+      - DEVELOPER_IDS=${DEVELOPER_IDS} # .env file
+      - NODE_ENV=production # override
+      - MONGO_URI=mongodb://mongo:27017/discord-bot # override
+    volumes:
+      - .:/app
+    depends_on: 
+      - mongo
+    networks:
+      - discord-bot-network
+    
+  mongo:
+    image: mongo
+    container_name: mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data:/data/db
+    networks:
+      - discord-bot-network
+    
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=${ME_CONFIG_BASICAUTH_USERNAME} # .env file
+      - ME_CONFIG_BASICAUTH_PASSWORD=${ME_CONFIG_BASICAUTH_PASSWORD} # .env file
+    networks:
+      - discord-bot-network
+    
+networks:
+  discord-bot-network: 
+    driver: bridge
